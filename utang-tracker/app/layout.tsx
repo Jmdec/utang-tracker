@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { Caveat, DM_Sans, DM_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Providers } from './providers'
-import AuthGuard from '@/components/AuthGuard'
 import InstallPrompt from '@/components/InstallPrompt'
+import AuthInitializer from '@/components/AuthInitializer' // 👈 NEW
 import './globals.css'
 
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat" });
@@ -41,9 +41,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en" className={`${caveat.variable} ${dmSans.variable} ${dmMono.variable}`}>
       <head>
@@ -64,13 +64,15 @@ export default function RootLayout({
         className="antialiased"
       >
         <Providers>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-          {/* InstallPrompt is outside AuthGuard so it catches
-              beforeinstallprompt regardless of auth state */}
+          {/* ✅ This runs rehydrate ONCE */}
+          <AuthInitializer />
+
+          {/* ❌ REMOVE AuthGuard here */}
+          {children}
+
           <InstallPrompt />
         </Providers>
+
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

@@ -17,24 +17,22 @@ export default function Header() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Only real iOS Safari — Chrome always has 'Chrome/' in UA, Safari on iOS does not
     const ua = navigator.userAgent;
     const isRealIOS =
       /iphone|ipad|ipod/i.test(ua) &&
       /safari/i.test(ua) &&
-      !/chrome|crios|fxios|edgios/i.test(ua); // exclude Chrome, Firefox, Edge on iOS
+      !/chrome|crios|fxios|edgios/i.test(ua);
     setIsIOS(isRealIOS);
 
-    // Detect if already installed (standalone mode)
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
     setIsInstalled(standalone);
 
-    // Listen for the install prompt (Android / desktop Chrome)
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -56,10 +54,20 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
 
-  const handleLogout = () => {
-    setUser(null);
-    setToken(null);
-    window.location.href = '/auth/login';
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      // Call the logout API to clear the auth_token cookie
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // silent — still log out client-side even if request fails
+    } finally {
+      // Clear Zustand store
+      setUser(null);
+      setToken(null);
+      // Redirect to login
+      window.location.href = '/auth/login';
+    }
   };
 
   const handleInstall = async () => {
@@ -135,7 +143,6 @@ export default function Header() {
               whiteSpace: 'nowrap',
             }}
           >
-            {/* Download icon */}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
@@ -145,7 +152,7 @@ export default function Header() {
           </button>
         )}
 
-        {/* iOS Guide Modal — centered */}
+        {/* iOS Guide Modal */}
         {showIOSGuide && (
           <div
             onClick={() => setShowIOSGuide(false)}
@@ -161,103 +168,100 @@ export default function Header() {
               padding: '20px',
             }}
           >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: 'relative',
-              background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
-              border: `1px solid #d8b4fe`,
-              borderRadius: borderRadius.lg,
-              padding: spacing.lg,
-              boxShadow: '0 8px 40px rgba(124,58,237,0.25)',
-              width: '100%',
-              maxWidth: '360px',
-            }}>
-            {/* Close */}
-            <button
-              onClick={() => setShowIOSGuide(false)}
+            <div
+              onClick={(e) => e.stopPropagation()}
               style={{
-                position: 'absolute',
-                top: spacing.md,
-                right: spacing.md,
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '20px',
-                color: '#7c3aed',
-                lineHeight: 1,
-              }}
-            >
-              ×
-            </button>
-
-            <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: '#5b21b6' }}>
-              Add to Home Screen
-            </p>
-            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#7c3aed' }}>
-              Install Personal Finance Tracker on your iPhone in 3 easy steps:
-            </p>
-
-            {/* Steps */}
-            {[
-              {
-                icon: (
-                  // Safari Share icon
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
-                ),
-                text: <>Tap the <strong>Share</strong> button <span style={{ fontSize: '12px', color: '#7c3aed' }}>(the box with the arrow pointing up)</span> at the bottom of Safari</>,
-              },
-              {
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <line x1="12" y1="8" x2="12" y2="16" />
-                    <line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
-                ),
-                text: <>Scroll down and tap <strong>"Add to Home Screen"</strong></>,
-              },
-              {
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ),
-                text: <>Tap <strong>"Add"</strong> in the top right corner</>,
-              },
-            ].map((step, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px',
-                marginBottom: '12px',
+                position: 'relative',
+                background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                border: `1px solid #d8b4fe`,
+                borderRadius: borderRadius.lg,
+                padding: spacing.lg,
+                boxShadow: '0 8px 40px rgba(124,58,237,0.25)',
+                width: '100%',
+                maxWidth: '360px',
               }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: borderRadius.full,
-                  background: '#ede9fe',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  {step.icon}
-                </div>
-                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#3b0764', lineHeight: 1.5 }}>
-                  {step.text}
-                </p>
-              </div>
-            ))}
+              <button
+                onClick={() => setShowIOSGuide(false)}
+                style={{
+                  position: 'absolute',
+                  top: spacing.md,
+                  right: spacing.md,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '20px',
+                  color: '#7c3aed',
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
 
-            <p style={{ margin: '12px 0 0', fontSize: '12px', color: '#a78bfa', textAlign: 'center' }}>
-              💡 Make sure you're using Safari — other browsers don't support this on iOS.
-            </p>
-          </div>
+              <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: '15px', color: '#5b21b6' }}>
+                Add to Home Screen
+              </p>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#7c3aed' }}>
+                Install Personal Finance Tracker on your iPhone in 3 easy steps:
+              </p>
+
+              {[
+                {
+                  icon: (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                  ),
+                  text: <>Tap the <strong>Share</strong> button <span style={{ fontSize: '12px', color: '#7c3aed' }}>(the box with the arrow pointing up)</span> at the bottom of Safari</>,
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                  ),
+                  text: <>Scroll down and tap <strong>"Add to Home Screen"</strong></>,
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ),
+                  text: <>Tap <strong>"Add"</strong> in the top right corner</>,
+                },
+              ].map((step, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  marginBottom: '12px',
+                }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: borderRadius.full,
+                    background: '#ede9fe',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    {step.icon}
+                  </div>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#3b0764', lineHeight: 1.5 }}>
+                    {step.text}
+                  </p>
+                </div>
+              ))}
+
+              <p style={{ margin: '12px 0 0', fontSize: '12px', color: '#a78bfa', textAlign: 'center' }}>
+                💡 Make sure you're using Safari — other browsers don't support this on iOS.
+              </p>
+            </div>
           </div>
         )}
 
@@ -312,24 +316,26 @@ export default function Header() {
               {/* Logout */}
               <button
                 onClick={handleLogout}
+                disabled={loggingOut}
                 style={{
                   width: '100%',
                   padding: `${spacing.md} ${spacing.lg}`,
                   backgroundColor: 'transparent',
-                  color: '#dc2626',
+                  color: loggingOut ? '#9ca3af' : '#dc2626',
                   border: 'none',
                   textAlign: 'left',
-                  cursor: 'pointer',
+                  cursor: loggingOut ? 'not-allowed' : 'pointer',
                   fontSize: '14px',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = '#fee2e2';
+                  if (!loggingOut)
+                    (e.currentTarget as HTMLElement).style.backgroundColor = '#fee2e2';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
                 }}
               >
-                Logout
+                {loggingOut ? 'Logging out...' : 'Logout'}
               </button>
             </div>
           )}

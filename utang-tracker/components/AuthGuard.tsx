@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 
-const PUBLIC_PATHS = ['/login', '/register'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
@@ -15,7 +15,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p));
 
   useEffect(() => {
-    if (!user && !isPublic) router.replace('/login');
+    if (!user && !isPublic) router.replace('/auth/login');
     if (user  &&  isPublic) router.replace('/');
   }, [user, isPublic, router]);
 
