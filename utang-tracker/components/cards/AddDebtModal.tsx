@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useDataStore } from '@/lib/store';
-import { colors, spacing, borderRadius } from '@/lib/design';
-import Modal from '@/components/Modal';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { useDataStore } from "@/lib/store";
+import { colors, spacing, borderRadius } from "@/lib/design";
+import Modal from "@/components/Modal";
+import toast from "react-hot-toast";
 
 interface AddDebtModalProps {
   isOpen: boolean;
@@ -12,33 +12,33 @@ interface AddDebtModalProps {
 }
 
 const labelStyle = {
-  display: 'block',
+  display: "block",
   marginBottom: spacing.sm,
-  fontSize: '14px',
+  fontSize: "14px",
   fontWeight: 600,
-  color: '#3b0764',
+  color: "#3b0764",
 } as const;
 
 const inputStyle = {
-  width: '100%',
+  width: "100%",
   padding: spacing.md,
-  border: '1px solid #a78bfa',
+  border: "1px solid #a78bfa",
   borderRadius: borderRadius.md,
-  fontSize: '14px',
-  boxSizing: 'border-box',
-  color: '#1a1a2e',
-  backgroundColor: '#faf7ff',
-  outline: 'none',
+  fontSize: "14px",
+  boxSizing: "border-box",
+  color: "#1a1a2e",
+  backgroundColor: "#faf7ff",
+  outline: "none",
 } as const;
 
 export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
   const { addDebt, contacts } = useDataStore();
   const [formData, setFormData] = useState({
-    personName: '',
-    amount: '',
-    type: 'borrowed' as 'borrowed' | 'lent',
-    description: '',
-    dueDate: '',
+    personName: "",
+    amount: "",
+    type: "borrowed" as "borrowed" | "lent",
+    description: "",
+    dueDate: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -49,9 +49,9 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/debts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/debts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           person_name: formData.personName,
           amount: parseFloat(formData.amount),
@@ -64,13 +64,13 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.message ?? 'Failed to add debt.');
+        toast.error(data.message ?? "Failed to add debt.");
         return;
       }
 
       addDebt({
         id: data.debt.id.toString(),
-        userId: '1',
+        userId: "1",
         personName: data.debt.person_name,
         amount: data.debt.amount,
         type: data.debt.type,
@@ -81,13 +81,21 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
         updatedAt: data.debt.updated_at,
       });
 
-      const label = formData.type === 'borrowed' ? 'You owe' : 'They owe';
-      toast.success(`${label} ${formData.personName} ₱${parseFloat(formData.amount).toLocaleString()}`);
+      const label = formData.type === "borrowed" ? "You owe" : "They owe";
+      toast.success(
+        `${label} ${formData.personName} ₱${parseFloat(formData.amount).toLocaleString()}`,
+      );
 
-      setFormData({ personName: '', amount: '', type: 'borrowed', description: '', dueDate: '' });
+      setFormData({
+        personName: "",
+        amount: "",
+        type: "borrowed",
+        description: "",
+        dueDate: "",
+      });
       onClose();
     } catch {
-      toast.error('Network error. Please try again.');
+      toast.error("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -96,12 +104,13 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add Debt">
       <form onSubmit={handleSubmit}>
-
         <div style={{ marginBottom: spacing.lg }}>
           <label style={labelStyle}>Person *</label>
           <select
             value={formData.personName}
-            onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, personName: e.target.value })
+            }
             style={inputStyle}
             required
           >
@@ -120,7 +129,9 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
               type="text"
               placeholder="Or type a new name"
               value={formData.personName}
-              onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, personName: e.target.value })
+              }
               style={inputStyle}
             />
           </div>
@@ -128,27 +139,29 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
 
         <div style={{ marginBottom: spacing.lg }}>
           <label style={labelStyle}>Type *</label>
-          <div style={{
-            display: 'flex',
-            gap: spacing.sm,
-          }}>
-            {(['borrowed', 'lent'] as const).map((type) => {
+          <div
+            style={{
+              display: "flex",
+              gap: spacing.sm,
+            }}
+          >
+            {(["borrowed", "lent"] as const).map((type) => {
               const isSelected = formData.type === type;
               return (
                 <label
                   key={type}
                   style={{
                     flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
                     padding: spacing.md,
-                    border: `2px solid ${isSelected ? '#7c3aed' : '#a78bfa'}`,
+                    border: `2px solid ${isSelected ? "#7c3aed" : "#a78bfa"}`,
                     borderRadius: borderRadius.md,
-                    backgroundColor: isSelected ? '#ede9fe' : '#faf7ff',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
+                    backgroundColor: isSelected ? "#ede9fe" : "#faf7ff",
+                    cursor: "pointer",
+                    transition: "all 150ms ease",
                   }}
                 >
                   <input
@@ -156,15 +169,22 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
                     name="type"
                     value={type}
                     checked={isSelected}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'borrowed' | 'lent' })}
-                    style={{ accentColor: '#7c3aed' }}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        type: e.target.value as "borrowed" | "lent",
+                      })
+                    }
+                    style={{ accentColor: "#7c3aed" }}
                   />
-                  <span style={{
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    color: isSelected ? '#3b0764' : '#6d28d9',
-                  }}>
-                    {type === 'borrowed' ? '🔴 I Owe' : '🟢 They Owe'}
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: isSelected ? "#3b0764" : "#6d28d9",
+                    }}
+                  >
+                    {type === "borrowed" ? "🔴 I Owe" : "🟢 They Owe"}
                   </span>
                 </label>
               );
@@ -179,7 +199,9 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
             placeholder="0.00"
             step="0.01"
             value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, amount: e.target.value })
+            }
             style={inputStyle}
             required
           />
@@ -191,7 +213,9 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
             type="text"
             placeholder="What is this debt for?"
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
             style={inputStyle}
           />
         </div>
@@ -201,12 +225,14 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
           <input
             type="date"
             value={formData.dueDate}
-            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, dueDate: e.target.value })
+            }
             style={inputStyle}
           />
         </div>
 
-        <div style={{ display: 'flex', gap: spacing.md }}>
+        <div style={{ display: "flex", gap: spacing.md }}>
           <button
             type="button"
             onClick={onClose}
@@ -214,13 +240,13 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
             style={{
               flex: 1,
               padding: spacing.md,
-              border: '1px solid #a78bfa',
+              border: "1px solid #a78bfa",
               borderRadius: borderRadius.md,
-              backgroundColor: 'transparent',
-              color: '#7c3aed',
+              backgroundColor: "transparent",
+              color: "#7c3aed",
               fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: '14px',
+              cursor: "pointer",
+              fontSize: "14px",
               opacity: loading ? 0.6 : 1,
             }}
           >
@@ -232,17 +258,17 @@ export default function AddDebtModal({ isOpen, onClose }: AddDebtModalProps) {
             style={{
               flex: 1,
               padding: spacing.md,
-              border: 'none',
+              border: "none",
               borderRadius: borderRadius.md,
               backgroundColor: colors.brand,
-              color: 'white',
+              color: "white",
               fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: "14px",
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? 'Saving...' : 'Add Debt'}
+            {loading ? "Saving..." : "Add Debt"}
           </button>
         </div>
       </form>
